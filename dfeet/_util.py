@@ -15,17 +15,16 @@ def get_proc_from_pid(pid):
     return fullpath
 
 # TODO: figure out more robust way to do this
+path = os.path.split(os.path.abspath(__file__))[0]
 def get_ui_dir():
-    try:
-        ui_dir = os.environ['DFEET_DATA_PATH']
-    except:
-        ui_dir = "../ui"
+    return os.environ.get('DFEET_DATA_PATH', path + '../ui')
 
-    return ui_dir 
+def get_xslt_dir():
+    return os.environ.get('DFEET_XSLT_PATH', path + '../xslt')
 
 def print_method(m):
     def decorator(*args):
-        print "call:", m,args
+        print "call:", m, args
         r = m(*args)
         print "return:", r
         return r

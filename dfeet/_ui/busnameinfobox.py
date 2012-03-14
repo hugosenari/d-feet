@@ -3,9 +3,10 @@ import gtk
 import pango 
 
 from dfeet import _util
-from dfeet.introspect_data import IntrospectData, Method, Signal
+from dfeet.introspect_data import IntrospectData, Method, Signal, ObjectPath, Interface
 
 from executemethoddialog import ExecuteMethodDialog
+from exportbusdialog import ExportInterfaceDialog
 from uiloader import UILoader
 
 class BusNameInfoBox(gtk.VBox):
@@ -67,6 +68,41 @@ class BusNameInfoBox(gtk.VBox):
 
         self.introspect_tree_view.connect('row-activated', 
                                           self.row_activated_handler)
+
+        #context menu
+        self.menu = None
+        self.introspect_tree_view.connect('button-press-event', self.right_click_only)
+
+    def right_click_only(self, treeview, event):
+        if event.button == 3: #3 = right click
+            pthinfo = treeview.get_path_at_pos(int(event.x), int(event.y))
+            if pthinfo:
+                self.row_menu_activated_handler(treeview, pthinfo[0], event)
+
+    def row_menu_activated_handler(self, treeview, path, event):
+        model = treeview.get_model()
+        iter = model.get_iter(path)
+        node = model.get_value(iter, IntrospectData.SUBTREE_COL)
+        #we can export all objectpath or only one interface
+        if isinstance(node, (ObjectPath, Interface)):
+            busiface = None
+            if isinstance(node, Interface):
+                busiface = node.iface
+                while not isinstance(node, ObjectPath):
+                    node = node.parent
+
+            buspath = node.path
+
+            items = ExportInterfaceDialog\
+                .get_node_menuitems(
+                                    self.busname.get_display_name(),
+                                    buspath, busiface)
+            if len(items):
+                if self.menu: self.menu.destroy()
+                self.menu = gtk.Menu()
+                for item in items:
+                    self.menu.append(item)
+                self.menu.popup(None, None, None, event.button, event.time)
 
     def row_activated_handler(self, treeview, path, view_column):
         model = treeview.get_model() 
