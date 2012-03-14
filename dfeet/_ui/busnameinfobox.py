@@ -95,7 +95,7 @@ class BusNameInfoBox(gtk.VBox):
 
     def cursor_changed_handler(self, treeview):
         node = self.get_selected_node()
-        if node is not None:
+        if node:
             node.on_selected(self.busname)
             self.emit('selected', node)
 
@@ -120,7 +120,10 @@ class BusNameInfoBox(gtk.VBox):
 
     def set_busname(self, busname):
         if self.busname:
-            self.busname.disconnect(self.busname._introspect_changed_signal_id)
+            try:
+                self.busname.disconnect(self.busname._introspect_changed_signal_id)
+            except:
+                pass
 
         self.busname = busname
         self.introspect_tree_view.set_model(busname.common_data._introspection_data)

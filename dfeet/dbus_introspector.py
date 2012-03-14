@@ -265,6 +265,18 @@ class BusWatch(gtk.GenericTreeModel):
         else:
             return self.address
 
+    def get_bus_type(self):
+        return self.bus_type
+
+    def get_bus_address(self):
+        return self.address
+
+    def close_bus(self):
+        self.bus.close()
+
+    def close_bus(self):
+        self.bus.close()
+
     def get_completion_model(self):
         return self.completion_model()
 

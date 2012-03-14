@@ -10,7 +10,7 @@ from subprocess import *
 import os
 import glob
 
-DFEET_VERSION='0.1.11'
+DFEET_VERSION='0.1.14'
 
 #Create an array with all the locale filenames
 I18NFILES = []
@@ -52,8 +52,8 @@ dist = setup(name='d-feet',
     maintainer_email='johnp@redhat.com',
     description='D-Bus debugger',
     long_description='D-Feet is a powerful D-Bus debugger',
-    url='http://hosted.fedoraproject.org/projects/d-feet/',
-    download_url='https://hosted.fedoraproject.org/projects/d-feet/',
+    url='http://live.gnome.org/d-feet/',
+    download_url='http://live.gnome.org/d-feet/',
     license='GNU GPL',
     platforms='linux',
     scripts=['d-feet'],
@@ -61,7 +61,10 @@ dist = setup(name='d-feet',
     data_files=[
         ('share/dfeet', glob.glob("ui/*.ui")),
         ('share/icons/hicolor/16x16/apps', glob.glob("icons/16x16/*.png")),
-        ('share/icons/hicolor/48x48/apps', ['ui/dfeet-icon.png']),
+        ('share/icons/hicolor/24x24/apps', glob.glob("icons/24x24/*.png")),
+        ('share/icons/hicolor/32x32/apps', glob.glob("icons/32x32/*.png")),
+        ('share/icons/hicolor/48x48/apps', glob.glob("icons/48x48/*.png")),
+        ('share/icons/hicolor/256x256/apps', glob.glob("icons/256x256/*.png")),
         ('share/applications', ['ui/dfeet.desktop']),
         ]+I18NFILES+HELPDOCS+HELPIMAGES+OMFFILES
 )
