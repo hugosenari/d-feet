@@ -5,7 +5,7 @@ from dfeet import _util
 class UILoader:
     instance = None
 
-    UI_COUNT = 6
+    UI_COUNT = 7
 
     (UI_MAINWINDOW,
      UI_FILTERBOX,
@@ -13,10 +13,11 @@ class UILoader:
      UI_EXECUTEDIALOG,
      UI_ADDCONNECTIONDIALOG,
      UI_EXPORTDIALOG,
+     UI_MONITORBOX,
     ) = range(UI_COUNT)
 
     # {ui_id: ((files,...), root widget)}
-    _ui_map = {UI_MAINWINDOW     : (('default-actiongroup.ui','mainwindow.ui'), 
+    _ui_map = {UI_MAINWINDOW     : (('default-actiongroup.ui', 'mainwindow.ui'),
                                     'appwindow1'),
                UI_FILTERBOX      : (('filterbox.ui',),
                                     'filterbox_table1'),
@@ -27,12 +28,14 @@ class UILoader:
                UI_EXPORTDIALOG  : (('exportdialog.ui',),
                                     'exportdialog1'),
                UI_ADDCONNECTIONDIALOG  : (('addconnectiondialog.ui',),
-                                          'add_connection_dialog1')
+                                          'add_connection_dialog1'),
+               UI_MONITORBOX  : (('monitorbox.ui',),
+                                          'monitorbox'),
               }
 
     def __init__(self, ui):
         ui_dir = _util.get_ui_dir()
-       
+
         ui_info = self._ui_map[ui]
         self.ui = gtk.Builder()
 

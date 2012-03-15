@@ -10,14 +10,14 @@ XSLT_DIR = get_xslt_dir()
      PYDBUS,
      PYDBUSDECORATOR
  ) = XLST_TYPES = [
-    {'name': 'export',
+    {'name': 'Export',
      'title':'Choose one xslt file'},
-    {'name': 'xml',
+    {'name': 'Export as xml',
      'title':'Export as dbus introspection xml'},
-    {'name': 'python dbus',
+    {'name': 'Export as python',
      'title': 'Export as python code',
      'file': XSLT_DIR + 'pydbusclient.xsl'},
-    {'name': 'pydbusdecorator',
+    {'name': 'Export as pydbusdecorator',
      'title': 'Export as python code (require pydbusdecorator)',
      'file': XSLT_DIR + 'pydbusdecorator.xsl'},
 ]
@@ -28,7 +28,7 @@ LEN_XLST_TYPES = len(XLST_TYPES)
  PYDBUSN,
  PYDBUSDECORATORN) = range(LEN_XLST_TYPES)
 
-class ExportInterfaceDialog:
+class ExportInterfaceDialog(object):
     '''
     Interface that let users export dbus interface as something.
     Since dbus specification recommends that interfaces had introspection method that return
@@ -67,7 +67,7 @@ class ExportInterfaceDialog:
         self.busiface = busiface
         self.xslttype = xslttype
 
-        self._lblbusname.set_text(busname)
+        self._lblbusname.set_text(busname.get_bus_name())
         self._lblobjectpath.set_text(buspath)
         self._lblinterface.set_text(busiface or '*')
 
@@ -90,15 +90,22 @@ class ExportInterfaceDialog:
 
     def export_cb(self, obj):
         try:
+            self._information.set_text('Exporting...')
             if self.has_valid_result:
-                self._information.set_text('Exporting...')
                 if self.xslttype is XMLN:
                     self.resultfile.write(
-                        str(
-                            Dbus2Xml(self.busname, self.buspath, self.busiface or '')))
+                        str(Dbus2Xml(
+                                self.busname, #busname
+                                self.buspath, #buspath
+                                self.busiface or '', #bus interface
+                                self.busname.get_bus()))) #bus connection
                     self._information.set_text('Exported')
                 elif self.has_valid_xslt:
-                    dbus2xml = Dbus2Xml(self.busname, self.buspath, self.busiface or '')
+                    dbus2xml = Dbus2Xml(
+                                self.busname.get_bus_name(), #busname
+                                self.buspath, #buspath
+                                self.busiface or '', #bus interface
+                                self.busname.get_bus()) #bus connection
                     xml2any = Xml2Any(dbus2xml, self.xsltfile)
                     self.resultfile.write(str(xml2any))
                     self._information.set_text('Exported')

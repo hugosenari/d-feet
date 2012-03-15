@@ -5,7 +5,7 @@ import dbus
 import _util
 
 class Node:
-    def __init__(self, model, parent = None):
+    def __init__(self, model, parent=None):
         self.child_list = []
         self.parent = parent
         self.model = model
@@ -76,7 +76,7 @@ class Node:
     def get_next_child(self, child):
         i = self.index(child)
         try:
-            return self.child_list[i+1]
+            return self.child_list[i + 1]
         except IndexError:
             return None
 
@@ -137,7 +137,7 @@ class Node:
         #l = len(self.child_list)
         #reorder_list = range(l)
         #self.model.rows_reordered(my_path, my_iter, reorder_list)
-        
+
 
         #if i < l - 1:
         #    last_path_item = len(path) - 1
@@ -150,9 +150,9 @@ class Node:
         for path in self.child_list:
             spath = str(path)
             if spath >= node:
-                return i 
+                return i
 
-            i+=1
+            i += 1
 
         return -1
 
@@ -180,7 +180,7 @@ class Node:
             child._row_changed(child_path)
 
     def get_icon_name(self):
-        return None 
+        return None
 
     def to_markup_str(self):
         return gobject.markup_escape_text(str(self))
@@ -189,7 +189,7 @@ class Node:
         result = ''
 
         for sig in sig_list:
-            if sig == []: 
+            if sig == []:
                 print sig_list
                 return ''
             result += sig['type']
@@ -200,7 +200,7 @@ class Node:
 
         # get rid of the last comma and space before returning 
         return result[0:-2]
-        
+
     def _sig_list_to_markup(self, sig_list):
         result = ''
 
@@ -212,6 +212,10 @@ class Node:
 
         # get rid of the last comma and space before returning 
         return result[0:-2]
+
+    def get_rule(self):
+        #return rule params for add_match 
+        return {}
 
 
 """ 
@@ -227,7 +231,7 @@ class LeafNode(Node):
         iface = ''
         obj_path = ''
         node = self.parent
-        
+
         while node is not None:
             if isinstance(node, Interface):
                 iface = str(node)
@@ -243,7 +247,7 @@ class LeafNode(Node):
         proxy = bus.get_object(name, obj_path)
         iface = dbus.Interface(proxy, iface)
 
-        return (proxy, iface)  
+        return (proxy, iface)
 
 class Method(LeafNode):
     # tree path = (0,x,0,y,0,z)
@@ -257,7 +261,7 @@ class Method(LeafNode):
     def dbus_call(self, bus, name, *args):
         (proxy, iface) = self.get_proxy_interface(bus, name)
         func = getattr(iface, self.method)
-        
+
         return func(*args)
 
     def to_markup_str(self):
@@ -269,7 +273,7 @@ class Method(LeafNode):
 
         if self.outsig:
             result += '<span foreground="#A52A2A">' + u' \u27A1 ' + '</span>'
-            result += '<span foreground="#FF00FF">(</span>' 
+            result += '<span foreground="#FF00FF">(</span>'
             result += self._sig_list_to_markup(self.outsig)
             result += '<span foreground="#FF00FF">)</span>'
 
@@ -281,11 +285,14 @@ class Method(LeafNode):
     def __str__(self):
         result = self.method + '('
         result += self._sig_list_to_string(self.insig) + ')'
-        
+
         if self.outsig:
-            result += u' \u27A1 (' +  self._sig_list_to_string(self.outsig) + ')'
-            
+            result += u' \u27A1 (' + self._sig_list_to_string(self.outsig) + ')'
+
         return result
+
+    def get_rule(self):
+        return {'member': self.method}
 
 class Signal(LeafNode):
     # tree path = (0,x,0,y,1,z)
@@ -318,6 +325,9 @@ class Signal(LeafNode):
 
         return result
 
+    def get_rule(self):
+        return {'member': self.signal}
+
 class Property(LeafNode):
     # tree path = (0,x,0,y,2,z)
     def __init__(self, model, parent, property, sig, access):
@@ -336,18 +346,18 @@ class Property(LeafNode):
             bus = busname.get_bus()
             (proxy, iface) = self.get_proxy_interface(bus, busname.get_display_name())
 
-            proxy.Get(iface.dbus_interface, 
-                      self.property, 
+            proxy.Get(iface.dbus_interface,
+                      self.property,
                       dbus_interface='org.freedesktop.DBus.Properties',
                       reply_handler=self.property_get_handler,
                       error_handler=self.property_get_error_handler)
 
 
-            
+
     def property_get_handler(self, value):
         self.value = value
 
-        path =  tuple(self._calculate_path())
+        path = tuple(self._calculate_path())
         self._row_changed(path)
 
     def property_get_error_handler(self, e):
@@ -385,6 +395,9 @@ class Property(LeafNode):
             result += ' = ' + str(self.value)
 
         return result
+
+    def get_rule(self):
+        return {'member': self.property}
 
 class MethodLabel(Node):
     # tree path = (0,x,0,y,0)
@@ -428,7 +441,7 @@ class SignalLabel(Node):
         return 'dfeet-signal-category'
 
     def to_markup_str(self):
-        return '<b>' + gobject.markup_escape_text(self._label) + '</b>' 
+        return '<b>' + gobject.markup_escape_text(self._label) + '</b>'
 
     def __str__(self):
         return self._label
@@ -482,13 +495,16 @@ class Interface(Node):
     def __str__(self):
         return self.iface
 
+    def get_rule(self):
+        return {'interface': self.iface}
+
 class InterfaceLabel(Node):
     # tree path = (0,x,0)
     def __init__(self, model, parent):
         Node.__init__(self, model, parent)
         self.set_expanded(True)
 
-        self._label='Interfaces'
+        self._label = 'Interfaces'
 
     def add(self, data):
         iface_list = data.keys()
@@ -498,7 +514,7 @@ class InterfaceLabel(Node):
             self._add_child(interface, data[iface])
 
     def to_markup_str(self):
-        return '<b>' + gobject.markup_escape_text(self._label) + '</b>' 
+        return '<b>' + gobject.markup_escape_text(self._label) + '</b>'
 
     def __str__(self):
         return self._label
@@ -522,6 +538,9 @@ class ObjectPath(Node):
     def __str__(self):
         return self.path
 
+    def get_rule(self):
+        return {'path': self.path}
+
 class ObjectPathLabel(Node):
     # tree path = (0,)
     def __init__(self, model):
@@ -529,7 +548,7 @@ class ObjectPathLabel(Node):
         Node.__init__(self, model)
         self.set_expanded(True)
 
-        self._label='Object Paths'
+        self._label = 'Object Paths'
 
     def add(self, data, node):
         obj_path = ObjectPath(self.model, self, node)
@@ -543,9 +562,9 @@ class ObjectPathLabel(Node):
         return self._label
 
 class IntrospectData(gtk.GenericTreeModel):
-    NUM_COL = 3 
+    NUM_COL = 3
 
-    (SUBTREE_COL, 
+    (SUBTREE_COL,
      DISPLAY_COL,
      ICON_NAME_COL) = range(NUM_COL)
 
@@ -566,8 +585,8 @@ class IntrospectData(gtk.GenericTreeModel):
         (0,x,0,y,1,z) - signal signature
         (0,x,0,y,1,z) - property signature
     
-    """ 
-    
+    """
+
     def __init__(self):
         super(IntrospectData, self).__init__()
 
@@ -621,7 +640,7 @@ class IntrospectData(gtk.GenericTreeModel):
         elif column == self.ICON_NAME_COL:
             return rowref.get_icon_name()
         else:
-            raise InvalidColumnError(column) 
+            raise InvalidColumnError(column)
 
         return None
 
@@ -647,17 +666,17 @@ class IntrospectData(gtk.GenericTreeModel):
         if rowref:
             return rowref.count_children()
 
-        return 1 
+        return 1
 
     def on_iter_nth_child(self, parent, n):
         if parent:
             return parent.get_nth_child(n)
-        
+
         if n == 0:
             return self.object_paths
         else:
             return None
-    
+
     def on_iter_parent(self, child):
         return child.parent
 
@@ -671,8 +690,8 @@ class IntrospectData(gtk.GenericTreeModel):
         result = prefix + str(node) + '\n'
         for child in node.child_list:
             result += self._node_to_str(child, prefix + '\t')
-            
-        return result 
+
+        return result
 
     def __str__(self):
 
