@@ -6,6 +6,7 @@ D-Bus > 1.0
 D-Bus Python > 0.82.3
 PyGtk
 Python 2.5
+python-libxslt http://xmlsoft.org/xslt/python.html
 
 Optional Requriements:
 
