@@ -1,1 +1,7 @@
 *.pyc
+.project
+.pydevproject
+build/
+d_feet.egg-info
+dfeet.komodoproject
+dist/
