@@ -17,7 +17,7 @@ def get_proc_from_pid(pid):
 # TODO: figure out more robust way to do this
 path = os.path.split(os.path.abspath(__file__))[0]
 def get_ui_dir():
-    return os.environ.get('DFEET_DATA_PATH', path + '../ui')
+    return os.environ.get('DFEET_DATA_PATH', path + '../share/dfeet/ui')
 
 def get_xslt_dir():
     return os.environ.get('DFEET_XSLT_PATH', path + '../xslt')
