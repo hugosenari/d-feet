@@ -1,11 +1,9 @@
-import gobject 
+import gobject
 import gtk
 
-from dfeet import _util
-
-from busnamebox import BusNameBox
-from busnameinfobox import BusNameInfoBox
-from uiloader import UILoader
+from .busnamebox import BusNameBox
+from .busnameinfobox import BusNameInfoBox
+from .uiloader import UILoader
 
 class BusBox(gtk.VBox):
     __gsignals__ =  {
@@ -17,10 +15,10 @@ class BusBox(gtk.VBox):
         super(BusBox, self).__init__()
 
         # FilterBox
-        signal_dict = { 
+        signal_dict = {
                         'hide_private_toggled' : self.hide_private_toggled_cb,
                         'filter_entry_changed': self.filter_entry_changed_cb
-                      } 
+                      }
 
 
         self.bus_watch = watch
@@ -58,7 +56,7 @@ class BusBox(gtk.VBox):
         self.pack_start(self.paned, True, True)
 
         ui.connect_signals(signal_dict)
-        
+
     def busname_selected_cb(self, busname_box, busname):
         self.busname_info_box.set_busname(busname)
 

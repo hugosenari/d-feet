@@ -4,7 +4,7 @@ import dbus.mainloop.glib
 import gobject
 import gtk
 import _util
-import _introspect_parser 
+import _introspect_parser
 import os
 import _ui.wnck_utils
 
@@ -45,14 +45,14 @@ class CommonNameData(gobject.GObject):
         self.bus = None
         self.process_id = None
         self.process_path = None
-        self.process_name = 'Unknown or Remote' 
+        self.process_name = 'Unknown or Remote'
         self._introspecting = False
-        self._introspection_data = IntrospectData() 
+        self._introspection_data = IntrospectData()
         self._introspect_object_queue = []
 
     # there is a race condition here but D-Bus
     # doesn't have a signal for introspection data change
-    # which would be impractical for some highly dynamic objects 
+    # which would be impractical for some highly dynamic objects
     def _introspect(self, name, node):
         self._introspecting = True
         obj = self.bus.get_object(name, node, follow_name_owner_changes=True)
@@ -72,9 +72,9 @@ class CommonNameData(gobject.GObject):
             cnode = ''
             if parent_node != '/':
                 cnode = parent_node
-                
-            cnode += '/' + node 
-            self._introspect_object_queue.append(cnode)            
+
+            cnode += '/' + node
+            self._introspect_object_queue.append(cnode)
 
         if self._introspect_object_queue:
             obj = self._introspect_object_queue.pop(0)
@@ -82,10 +82,10 @@ class CommonNameData(gobject.GObject):
 
         if data['interfaces']:
             self._introspection_data.append(parent_node, data)
-        
-             
+
+
         self.emit('introspect_data_changed')
-        
+
 class BusName(gobject.GObject):
     __gsignals__ = {
         'changed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,())
@@ -108,7 +108,7 @@ class BusName(gobject.GObject):
 
         self.common_data.bus = bus
         self.common_data.unique_name = str(unique_name)
-        self.common_data.connect('introspect_data_changed', 
+        self.common_data.connect('introspect_data_changed',
                                  self._introspect_data_changed_cb)
 
         self.busname_is_public = not (not common_name)
@@ -142,7 +142,7 @@ class BusName(gobject.GObject):
 
     def get_icon(self):
         icon_table = _ui.wnck_utils.IconTable.get_instance()
-        return icon_table.get_icon(self.get_process_id())    
+        return icon_table.get_icon(self.get_process_id())
 
     def get_bus(self):
         return self.common_data.bus
@@ -167,13 +167,13 @@ class BusName(gobject.GObject):
 
     def get_common_name(self):
         return self.common_name
-    
+
     def get_process_id(self):
         return self.common_data.process_id
-    
+
     def get_process_path(self):
         return self.common_data.process_path
-    
+
     def get_process_name(self):
         return self.common_data.process_name
 
@@ -198,12 +198,12 @@ class BusName(gobject.GObject):
             result += ': '
             result += self.common_name
 
-        return result 
+        return result
 
 class BusWatch(gtk.GenericTreeModel):
-    NUM_COL = 9 
+    NUM_COL = 9
 
-    (BUSNAME_OBJ_COL, 
+    (BUSNAME_OBJ_COL,
      UNIQUE_NAME_COL,
      COMMON_NAME_COL,
      IS_PUBLIC_COL,        # has a common name
@@ -249,9 +249,9 @@ class BusWatch(gtk.GenericTreeModel):
                                      dbus_interface='org.freedesktop.DBus',
                                      signal_name='NameOwnerChanged')
 
-        bus_object = self.bus.get_object('org.freedesktop.DBus', 
+        bus_object = self.bus.get_object('org.freedesktop.DBus',
                                          '/org/freedesktop/DBus')
-        self.bus_interface = dbus.Interface(bus_object, 
+        self.bus_interface = dbus.Interface(bus_object,
                                             'org.freedesktop.DBus')
 
         self.bus_interface.ListNames(reply_handler=self.list_names_handler,
@@ -284,7 +284,7 @@ class BusWatch(gtk.GenericTreeModel):
         names = self.unique_names[name]
         if not names:
             return
-        
+
         name = names[0]
         if not name:
             return
@@ -298,7 +298,7 @@ class BusWatch(gtk.GenericTreeModel):
     # get the Unix process ID so we can associate the name
     # with a process (this will only work under Unix like OS's)
     def get_unix_process_id_async_helper(self, name):
-         self.bus_interface.GetConnectionUnixProcessID(name, 
+         self.bus_interface.GetConnectionUnixProcessID(name,
                 reply_handler = lambda id: self.get_unix_process_id_cb(name, id),
                 error_handler = lambda error: self.get_unix_process_id_error_cb(name, error))
 
@@ -322,12 +322,12 @@ class BusWatch(gtk.GenericTreeModel):
             self.name_list.append(busnameobj)
             path = (self.name_list.index(busnameobj),)
             iter = self.get_iter(path)
-            self.row_inserted(path, iter) 
+            self.row_inserted(path, iter)
         else:
             if not owner:
                 owner = self.bus_interface.GetNameOwner(name)
                 if owner == 'org.freedesktop.DBus':
-                    return 
+                    return
 
             # if owner still does not exist then we move on
             if not owner:
@@ -365,7 +365,7 @@ class BusWatch(gtk.GenericTreeModel):
 
             index = self.name_list.index(self.unique_names[name][0])
             self.name_list.pop(index)
-            
+
             del(self.unique_names[name])
             self.row_deleted((index,))
         else:
@@ -399,7 +399,7 @@ class BusWatch(gtk.GenericTreeModel):
         else :
             if new_owner:
                 self.add_name(name, new_owner)
-            
+
             if old_owner:
                 self.remove_name(name, old_owner)
 
@@ -445,7 +445,7 @@ class BusWatch(gtk.GenericTreeModel):
             child = rowref[1]
 
         if column == self.BUSNAME_OBJ_COL:
-            return name 
+            return name
         elif column == self.UNIQUE_NAME_COL:
             return name.get_unique_name()
         elif column == self.COMMON_NAME_COL:
@@ -464,11 +464,11 @@ class BusWatch(gtk.GenericTreeModel):
             if child == -1:
                 return '<b>' + gobject.markup_escape_text(name.get_display_name()) + '</b>'
             elif child == 1:
-                return '<b>Command Line: </b>' + gobject.markup_escape_text(name.get_process_name()) + ' (' + gobject.markup_escape_text(str(name.get_process_id())) + ')' 
+                return '<b>Command Line: </b>' + gobject.markup_escape_text(name.get_process_name()) + ' (' + gobject.markup_escape_text(str(name.get_process_id())) + ')'
             elif child == 0:
                 return '<b>Unique Name: </b>'+ gobject.markup_escape_text(name.get_unique_name())
         else:
-            raise InvalidColumnError(column) 
+            raise InvalidColumnError(column)
 
         return None
 
@@ -492,7 +492,7 @@ class BusWatch(gtk.GenericTreeModel):
     def on_iter_children(self, parent):
         if parent:
             if len(parent) == 1:
-                return (parent[0], 0) 
+                return (parent[0], 0)
             else:
                 return None
 
@@ -526,5 +526,5 @@ class BusWatch(gtk.GenericTreeModel):
             return None
 
     def on_iter_parent(self, child):
-        return (child[0],) 
+        return (child[0],)
 

@@ -1,13 +1,14 @@
-import gobject 
+import gobject
 import gtk
 
-from dfeet.dbus_introspector import BusWatch
+from .. import dbus_introspector
+BusWatch = dbus_introspector.BusWatch
+from .busnameview import BusNameView
 
-from busnameview import BusNameView
 
 class BusNameBox(gtk.VBox):
     __gsignals__ = {
-        'busname-selected' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+        'busname-selected': (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                              (gobject.TYPE_PYOBJECT,))
                    }
 
@@ -25,7 +26,7 @@ class BusNameBox(gtk.VBox):
         self.show_all()
 
     def _completion_match_func(self, completion, key, iter):
-        print completion, key, iter 
+        print completion, key, iter
         return self.tree_view._is_iter_equal(completion.get_model(),
                                             iter, key)
 

@@ -23,28 +23,30 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 
-from xml.parsers.expat import ExpatError, ParserCreate
+from xml.parsers.expat import ParserCreate
 from dbus.exceptions import IntrospectionParserException
 
+
 class _Parser(object):
-    __slots__ = ('map', 
-                 'in_iface', 
-                 'in_method', 
+    __slots__ = ('map',
+                 'in_iface',
+                 'in_method',
                  'in_signal',
                  'in_property',
                  'property_access',
                  'in_sig',
-                 'out_sig', 
+                 'out_sig',
                  'node_level',
                  'in_signal')
+
     def __init__(self):
-        self.map = {'child_nodes':[],'interfaces':{}}
+        self.map = {'child_nodes': [], 'interfaces': {}}
         self.in_iface = ''
         self.in_method = ''
         self.in_signal = ''
         self.in_property = ''
         self.property_access = ''
-        self.in_sig = [] 
+        self.in_sig = []
         self.out_sig = []
         self.node_level = 0
 
@@ -90,54 +92,77 @@ class _Parser(object):
                 self.in_sig.append({'name': prop_name, 'type': prop_type})
                 self.property_access = attributes['access']
 
-
     def EndElementHandler(self, name):
         if name == 'node':
             self.node_level -= 1
         elif self.in_iface:
+            interfaces = self.map['interfaces']
             if (not self.in_method and name == 'interface'):
                 self.in_iface = ''
             elif (self.in_method and name == 'method'):
-                if not self.map['interfaces'].has_key(self.in_iface):
-                    self.map['interfaces'][self.in_iface]={'methods':{}, 'signals':{}, 'properties':{}}
-
-                if self.map['interfaces'][self.in_iface]['methods'].has_key(self.in_method):
-                    print "ERROR: Some clever service is trying to be cute and has the same method name in the same interface"
+                if self.in_iface not in interfaces:
+                    interfaces[self.in_iface] = {
+                        'methods': {},
+                        'signals': {},
+                        'properties': {}
+                    }
+                methods = interfaces[self.in_iface]['methods']
+                if self.in_method in methods:
+                    error_msg = "ERROR: Some clever service is trying to be"
+                    error_msg = error_msg + "cute and has the same method name"
+                    error_msg = error_msg + "in the same interface"
+                    print(error_msg)
                 else:
-                    self.map['interfaces'][self.in_iface]['methods'][self.in_method] = (self.in_sig, self.out_sig)
+                    methods[self.in_method] = \
+                        (self.in_sig, self.out_sig)
 
                 self.in_method = ''
-                self.in_sig = [] 
+                self.in_sig = []
                 self.out_sig = []
+
             elif (self.in_signal and name == 'signal'):
-                if not self.map['interfaces'].has_key(self.in_iface):
-                    self.map['interfaces'][self.in_iface]={'methods':{}, 'signals':{}, 'properties':{}}
-
-                if self.map['interfaces'][self.in_iface]['signals'].has_key(self.in_signal):
-                    print "ERROR: Some clever service is trying to be cute and has the same signal name in the same interface"
+                if self.in_iface not in interfaces:
+                    interfaces[self.in_iface] = {
+                        'methods': {},
+                        'signals': {},
+                        'properties': {}
+                    }
+                signals = interfaces[self.in_iface]['signals']
+                if self.in_signal in signals:
+                    error_msg = "ERROR: Some clever service is trying to be"
+                    error_msg = error_msg + "cute and has the same signal name"
+                    error_msg = error_msg + "in the same interface"
+                    print(error_msg)
                 else:
-                    self.map['interfaces'][self.in_iface]['signals'][self.in_signal] = (self.in_sig,)
-
+                    signals[self.in_signal] = (self.in_sig,)
                 self.in_signal = ''
                 self.in_sig = []
                 self.out_sig = []
             elif (self.in_property and name == 'property'):
-                if not self.map['interfaces'].has_key(self.in_iface):
-                    self.map['interfaces'][self.in_iface]={'methods':{}, 'signals':{}, 'properties':{}}
-
-                if self.map['interfaces'][self.in_iface]['properties'].has_key(self.in_property):
-                    print "ERROR: Some clever service is trying to be cute and has the same property name in the same interface"
+                if self.in_iface not in interfaces:
+                    interfaces[self.in_iface] = {
+                        'methods': {},
+                        'signals': {},
+                        'properties': {}
+                    }
+                properties = interfaces[self.in_iface]['properties']
+                if self.in_property in properties:
+                    error_msg = "ERROR: Some clever service is trying to be"
+                    error_msg = error_msg + "cute and has the same property"
+                    error_msg = error_msg + "name in the same interface"
+                    print(error_msg)
                 else:
-                    self.map['interfaces'][self.in_iface]['properties'][self.in_property] = (self.in_sig, self.property_access)
+                    properties[self.in_property] = (self.in_sig,
+                        self.property_access)
 
                 self.in_property = ''
-                self.in_sig = [] 
+                self.in_sig = []
                 self.out_sig = []
                 self.property_access = ''
 
 
 def process_introspection_data(data):
-    """Return a structure mapping all of the elements from the introspect data 
+    """Return a structure mapping all of the elements from the introspect data
        to python types TODO: document this structure
 
     :Parameters:
@@ -146,5 +171,5 @@ def process_introspection_data(data):
     """
     try:
         return _Parser().parse(data)
-    except Exception, e:
+    except Exception as e:
         raise IntrospectionParserException('%s: %s' % (e.__class__, e))

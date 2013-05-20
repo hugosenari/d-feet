@@ -1,8 +1,6 @@
 import gobject
 import gtk
-import pango
 
-from dfeet import _util
 from dfeet.introspect_data import IntrospectData, Method, Signal, ObjectPath, Interface, Property
 
 from executemethoddialog import ExecuteMethodDialog
@@ -89,8 +87,8 @@ class BusNameInfoBox(gtk.VBox):
 
     def row_menu_activated_handler(self, treeview, path, event):
         model = treeview.get_model()
-        iter = model.get_iter(path)
-        node = model.get_value(iter, IntrospectData.SUBTREE_COL)
+        iterable = model.get_iter(path)
+        node = model.get_value(iterable, IntrospectData.SUBTREE_COL)
         items = self.get_menuitems_for_monitor(node)
 
         #we can export all objectpath or only one interface
@@ -117,9 +115,9 @@ class BusNameInfoBox(gtk.VBox):
 
     def row_activated_handler(self, treeview, path, view_column):
         model = treeview.get_model()
-        iter = model.get_iter(path)
+        iterable = model.get_iter(path)
 
-        node = model.get_value(iter, IntrospectData.SUBTREE_COL)
+        node = model.get_value(iterable, IntrospectData.SUBTREE_COL)
 
         if isinstance(node, Method):
             dialog = ExecuteMethodDialog(self.busname, node)
@@ -130,14 +128,14 @@ class BusNameInfoBox(gtk.VBox):
             else:
                 treeview.expand_row(path, False)
 
-    def row_collapsed_handler(self, treeview, iter, path):
+    def row_collapsed_handler(self, treeview, iterable, path):
         model = treeview.get_model()
-        node = model.get(iter, model.SUBTREE_COL)[0]
+        node = model.get(iterable, model.SUBTREE_COL)[0]
         node.set_expanded(False)
 
-    def row_expanded_handler(self, treeview, iter, path):
+    def row_expanded_handler(self, treeview, iterable, path):
         model = treeview.get_model()
-        node = model.get(iter, model.SUBTREE_COL)[0]
+        node = model.get(iterable, model.SUBTREE_COL)[0]
         node.set_expanded(True)
 
     def cursor_changed_handler(self, treeview):
@@ -148,17 +146,17 @@ class BusNameInfoBox(gtk.VBox):
 
     def get_selected_node(self):
         selection = self.introspect_tree_view.get_selection()
-        model, iter = selection.get_selected()
-        if not iter:
+        model, iterable = selection.get_selected()
+        if not iterable:
             return None
 
-        node = model.get(iter, model.SUBTREE_COL)[0]
+        node = model.get(iterable, model.SUBTREE_COL)[0]
         return node
 
-    def text_cell_data_handler(self, column, cell, model, iter, treeview):
+    def text_cell_data_handler(self, column, cell, model, iterable, treeview):
         node = model.get(iter, model.SUBTREE_COL)[0]
         if node.is_expanded():
-            path = model.get_path(iter)
+            path = model.get_path(iterable)
             treeview.expand_row(path, False)
 
     def introspect_changed(self, busname):

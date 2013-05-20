@@ -1,4 +1,4 @@
-import gtk, os
+import gtk
 from uiloader import UILoader
 from dfeet._ui.dbustoany import Dbus2Xml, Xml2Any
 from dfeet._util import get_xslt_dir
