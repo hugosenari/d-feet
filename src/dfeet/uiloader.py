@@ -6,13 +6,14 @@ from gi.repository import Gtk
 class UILoader:
     instance = None
 
-    UI_COUNT = 5
+    UI_COUNT = 6
 
     (UI_MAINWINDOW,
      UI_INTROSPECTION,
      UI_BUSWATCH,
      UI_EXECUTEDIALOG,
-     UI_ADDCONNECTIONDIALOG
+     UI_ADDCONNECTIONDIALOG,
+     UI_MONITORBOX,
      ) = range(UI_COUNT)
 
     # {ui_id: ((files,...), root widget)}
@@ -25,7 +26,9 @@ class UILoader:
                UI_EXECUTEDIALOG: (('executedialog.ui',),
                                   'executedialog1'),
                UI_ADDCONNECTIONDIALOG: (('addconnectiondialog.ui',),
-                                        'add_connection_dialog1')
+                                        'add_connection_dialog1'),
+               UI_MONITORBOX: (('monitorbox.ui',),
+                               'monitorbox'),
                }
 
     def __init__(self, data_dir, ui):

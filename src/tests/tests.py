@@ -12,6 +12,7 @@ from dfeet.introspection_helper import DBusInterface
 from dfeet.introspection_helper import DBusProperty
 from dfeet.introspection_helper import DBusSignal
 from dfeet.introspection_helper import DBusMethod
+from dfeet.uiloader import UILoader
 import unittest
 
 XML = """
@@ -98,6 +99,16 @@ class AddressInfoTest(unittest.TestCase):
         #TODO: setup a gdbus server and test a peer to peer connection
         #(see http://developer.gnome.org/gio/unstable/GDBusServer.html#gdbus-peer-to-peer)
         pass
+
+
+class MonitorTest(unittest.TestCase):
+    
+    def test_ui_loader_has_monitorbox(self):
+        """Test if can load monitor box ui"""
+        self.assertTrue(bool(UILoader.UI_MONITORBOX))
+        self.assertTrue(UILoader.UI_MONITORBOX in UILoader._ui_map)
+        UILoader("../../data", UILoader.UI_MONITORBOX)
+        
 
 if __name__ == "__main__":
     #run tests
