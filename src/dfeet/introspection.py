@@ -11,6 +11,8 @@ from dfeet.introspection_helper import DBusInterface
 from dfeet.introspection_helper import DBusProperty
 from dfeet.introspection_helper import DBusSignal
 from dfeet.introspection_helper import DBusMethod
+from dfeet.dbus_monitor import DbusMonitor
+from dfeet.monitorbox import MonitorBox
 
 
 class AddressInfo():
@@ -81,12 +83,59 @@ class AddressInfo():
                 self.connection = None
                 raise Exception("Invalid p2p address '%s'" % (self.address))
 
+        #dbis_,pmotpr
+        self.monitor_store = ui.get_widget('monitorstore')
+        self.monitor_box = None # current monitorbox
+        self.context_menu = None # current context menu
+        self.__treeview.connect('button-press-event', self.__treeview_row_clicked_cb)
+         
         #start processing data
         self.introspect_start()
 
+    def __treeview_row_clicked_cb(self, treeview, event):
+        if event.button == 3: #3 = right click 
+            pthinfo = treeview.get_path_at_pos(int(event.x), int(event.y)) 
+            if pthinfo:
+                self.__row_menu_activated_cb(treeview, pthinfo[0], event)
+                
+    def __row_menu_activated_cb(self, treeview, path, event):
+        model = treeview.get_model()
+        iter_ = model.get_iter(path)
+        node = model.get_value(iter_, 1)
+        if node is None and model.iter_parent(iter_) is not None:
+            iter_ = model.iter_parent(iter_)
+            node = model.get_value(iter_, 1)
+        items = self.__get_menuitems_for_monitor(node)
+        if len(items):
+            if self.context_menu:
+                self.context_menu.destroy()
+            self.context_menu = Gtk.Menu()
+            for item in items:
+                self.context_menu.append(item)
+            self.context_menu.popup(None, None, None, None, event.button, event.time)
+            
+    def __get_menuitems_for_monitor(self, node=None):
+        if node is not None:
+            def soft_monitor_cb(*ags, **kws):
+                self.__show_monitor_for_node(node)
+            label = DbusMonitor.node_to_monitor_label(node)
+            soft_monitor_item = Gtk.MenuItem(label)
+            soft_monitor_item.connect('activate', soft_monitor_cb)
+            soft_monitor_item.show()
+            return [soft_monitor_item]
+    
+    def __show_monitor_for_node(self, node):
+        if self.monitor_box:
+            self.destroy_monitor()
+        monitorclass = DbusMonitor.node_to_monitor(node)
+        dbusmonitor = monitorclass(self.name, self.connection)
+        self.monitor_box = MonitorBox(self.name, dbusmonitor, self.data_dir)
+        self.monitor_box.start()
+        self.monitor_store.add(self.monitor_box)
+
     def __messagedialog_close_cb(self, dialog):
         self.__messagedialog.destroy()
-
+        
     def __treeview_row_activated_cb(self, treeview, path, view_column):
         model = treeview.get_model()
         iter_ = model.get_iter(path)

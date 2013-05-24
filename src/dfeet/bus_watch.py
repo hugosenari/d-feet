@@ -74,6 +74,7 @@ class BusWatch(object):
         self.entry_filter.connect("changed",
                                   self.__entry_filter_changed_cb)
 
+
         #setup the conection
         if self.address == Gio.BusType.SYSTEM or self.address == Gio.BusType.SESSION:
             self.connection = Gio.bus_get_sync(self.address, None)
@@ -201,6 +202,7 @@ class BusWatch(object):
             "error getting unix process id for %s: %s" % (
                 bus_name_obj.bus_name_unique, str(error)))
         bus_name_obj.pid = 0
+
 
     def __sort_on_name(self, model, iter1, iter2, user_data):
         un1 = model.get_value(iter1, 2)
