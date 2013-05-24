@@ -187,6 +187,22 @@
         <property name="position">1</property>
       </packing>
     </child>
+    <child>
+      <object class="GtkBox" id="monitorstore">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">False</property>
+        <property name="pack_type">end</property>
+        <property name="position">3</property>
+      </packing>
+    </child>
   </object>
   <object class="GtkMessageDialog" id="messagedialog">
     <property name="can_focus">False</property>
