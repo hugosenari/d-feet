@@ -30,6 +30,15 @@ class DbusMonitor(object):
         MSG_INVALID: 'invalid',
     }
     
+    def __del__(self):
+        try:
+            self.stop()
+        except:
+            pass
+        
+    def __exit__(self):
+        self.__del__()
+    
     NODE_TO_MONITOR = {}
     '''
     Watch informations passing over one bus
@@ -76,10 +85,18 @@ class DbusMonitor(object):
         if member: kws['member'] = member
         if destination: kws['destination'] = destination
         self.filters = kws
+        
+        self.proxy = Gio.DBusProxy.new_sync(
+            self.con, #cpmmectopm
+            Gio.DBusProxyFlags.NONE,
+            None, #DBusInterfaceInfo
+            "org.freedesktop.DBus", #name
+            "/", #path
+            "org.freedesktop.DBus", #iface
+            None
+        ) 
 
     def start(self, callback=None, *args, **kws):
-        if self._filter_cb:
-            self.stop()
         self.callback = callback
         #first we convert parms to rule
         self.rule = ''
@@ -99,9 +116,8 @@ class DbusMonitor(object):
             if slf.match(message): 
                 slf.message_filter(bus, message, *args, **kws)
             return message
-        self._filter_cb = _filter_cb
         self.add_match(self.rule)
-        self.filter_guid = self.con.add_filter(self._filter_cb, self)
+        self.filter_guid = self.con.add_filter(_filter_cb, self)
         
     def match(self, msg):
         r = self.filters
@@ -114,42 +130,17 @@ class DbusMonitor(object):
         return True
 
     def add_match(self, rule):
-        dbusIface = Gio.DBusProxy.new_sync(
-            self.con, #cpmmectopm
-            Gio.DBusProxyFlags.NONE,
-            None, #DBusInterfaceInfo
-            "org.freedesktop.DBus", #name
-            "/", #path
-            "org.freedesktop.DBus", #iface
-            None
-        )
         def error_handler(proxy_object, err, user_data):
-            print err
-        dbusIface.AddMatch('(s)', rule, #signature, value
+            pass
+        self.proxy.AddMatch('(s)', rule, #signature, value
             error_handler=error_handler)
         
     def remove_match(self, rule):
-        proxy = Gio.DBusProxy.new_sync(
-            self.con, #cpmmectopm
-            Gio.DBusProxyFlags.NONE,
-            None, #DBusInterfaceInfo
-            "org.freedesktop.DBus", #name
-            "/", #path
-            "org.freedesktop.DBus", #iface
-            None
-        )
-        proxy.call_sync(
-            "RemoveMatch", #method name
-            GLib.Variant('s', rule), #signature, value
-            Gio.DBusCallFlags.NONE,
-            -1, #timeout
-            None,
-        )
+        self.proxy.RemoveMatch('(s)', rule)
 
     def stop(self, *args, **kws):
         self.remove_match(self.rule)
         self.con.remove_filter(self.filter_guid)
-        self._filter_cb = None
 
     def message_filter(self, bus, message, *args, **kws):
         if self.callback:
@@ -199,6 +190,15 @@ class DbusMonitors(object):
     Base class to monitors group
     monitor: list of DbusMonitor or DbusMonitors
     '''
+    def __del__(self):
+        try:
+            self.stop()
+        except:
+            pass
+        
+    def __exit__(self):
+        self.__del__()
+        
     def __init__(self, monitors=[], *args, **kws):
         self.monitors = monitors
 

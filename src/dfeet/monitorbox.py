@@ -4,6 +4,16 @@ from gi.repository import Gtk, Gio, GLib
 
 class MonitorBox(Gtk.VBox):
     """Class to handle dbus monitor interface"""
+
+    def __del__(self):
+        try:
+            self.stop()
+        except:
+            pass
+        
+    def __exit__(self):
+        self.__del__()
+        
     def __init__(self, busname, dbusmonitor, data_dir, *args, **kw):
         signal_dict = {
                         'destroy_monitor_box_cb' : self.stop,
@@ -48,13 +58,11 @@ class MonitorBox(Gtk.VBox):
             return self.monitore(bus, message, dbusmonitor, *args, **kws)
         self.callback = _filter_cb
         self.dbusmonitor.start(_filter_cb)
-        #self.emit('started', self.dbusmonitor)
 
     def stop(self, *args, **kws):
         if self.callback:
             self.dbusmonitor.stop()
             self.callback = None
-        #self.emit('stoped', self.dbusmonitor)
 
     #constructor helpers
     @staticmethod
