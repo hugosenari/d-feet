@@ -32,10 +32,10 @@ class MonitorBox(Gtk.VBox):
         self.ui.connect_signals(signal_dict)
 
         self.textviews = {
-             DbusMonitor.MSG_ERROR: 'errostextview',
-             DbusMonitor.MSG_METHOD: 'calltextview',
-             DbusMonitor.MSG_RETURN: 'resulttextview',
-             DbusMonitor.MSG_SIGNAL: 'signalstextview',
+             DbusMonitor.MSG_ERROR: 'monitortextview',
+             DbusMonitor.MSG_METHOD: 'monitortextview',
+             DbusMonitor.MSG_RETURN: 'monitortextview',
+             DbusMonitor.MSG_SIGNAL: 'monitortextview',
         }
 
         self.callback = None

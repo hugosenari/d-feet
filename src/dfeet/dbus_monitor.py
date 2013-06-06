@@ -6,16 +6,6 @@ from dfeet.introspection_helper import DBusMethod
 
 from gi.repository import Gio, GLib
 
-class NodeToMonitor(object):
-    def __init__(self, *node_types):
-        self.node_types = node_types
-    
-    def __call__(self, cls):
-        for node_type in self.node_types:
-            DbusMonitor.NODE_TO_MONITOR[node_type] = cls
-        return cls
-
-
 class DbusMonitor(object):
     MSG_ERROR = Gio.DBusMessageType.ERROR
     MSG_METHOD = Gio.DBusMessageType.METHOD_CALL
@@ -169,212 +159,17 @@ class DbusMonitor(object):
     
     @staticmethod
     def Label():
-        return 'Generic Monitor'
+        return 'BusName Monitor'
 
     @staticmethod
     def node_to_monitor(node):
         def constructor(busname, conn):
-            monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__, DbusName)
+            monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__, DbusMonitor)
             rules = {} 
             return monitorclass(busname, conn, **rules)
         return constructor
 
     @staticmethod
     def node_to_monitor_label(node):
-        monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__)
+        monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__, DbusMonitor)
         return monitorclass.Label()
-
-
-class DbusMonitors(object):
-    '''
-    Base class to monitors group
-    monitor: list of DbusMonitor or DbusMonitors
-    '''
-    def __del__(self):
-        try:
-            self.stop()
-        except:
-            pass
-        
-    def __exit__(self):
-        self.__del__()
-        
-    def __init__(self, monitors=[], *args, **kws):
-        self.monitors = monitors
-
-    def start(self, callback=None, *args, **kws):
-        for m in self.monitors:
-            m.start(callback=callback, *args, **kws)
-
-    def stop(self, *args, **kws):
-        for m in self.monitors:
-            m.stop(*args, **kws)
-
-    @property
-    def rule(self):
-        result = ''
-        for m in self.monitors:
-            result = result + m.rule
-        return result
-
-    @property
-    def is_group(self):
-        return True
-    
-    @staticmethod
-    def Label():
-        return 'Generic Monitor'
-
-
-class SenderMonitor(DbusMonitor):
-    '''
-    Use in cases where introspected bus will be sender of messege
-    sender: str, bus name of sender
-    member: str, member to be watched (name of method or signal)
-    '''
-    def __init__(self, *args, **kws):
-        kws['sender'] = kws.get('sender', args[0])
-        super(SenderMonitor, self).__init__(*args, **kws)
-    
-    @staticmethod
-    def Label():
-        return 'Sender Monitor'
-
-
-class DestinationMonitor(DbusMonitor):
-    '''
-    Use in case where introspected bus will be destination of message
-    member: str, member to be watched (name of method or signal)
-    destination: str, busname of destination
-    '''
-    def __init__(self, *args, **kws):
-        kws['destination'] = kws.get('destination', args[0])
-        super(DestinationMonitor, self).__init__(*args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Destination Monitor'
-
-
-@NodeToMonitor(DBusSignal)
-class SignalMonitor(SenderMonitor):
-    '''
-    Signal of introspected interface
-    member: str, member to be watched (name of signal) 
-    '''
-    def __init__(self, *args, **kws):
-        kws['msg_type'] = kws.get('msg_type', DbusMonitor.MSG_SIGNAL)
-        super(SignalMonitor, self).__init__(*args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Signal Monitor'
-
-
-class CallMonitor(DestinationMonitor):
-    '''
-    Method call in instrospected interface 
-    member: str, member to be watched (name of method) 
-    destination: str, that will be descarted
-    '''
-    def __init__(self, *args, **kws):
-        kws['msg_type'] = kws.get('msg_type', DbusMonitor.MSG_METHOD)
-        super(CallMonitor, self).__init__(*args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Method Call Monitor'
-
-
-class ReturnMonitor(SenderMonitor):
-    '''
-    Method return of introspected interface
-    member: str, member to be watched (name of method)
-    '''
-    def __init__(self, *args, **kws):
-        kws['msg_type'] = kws.get('msg_type', DbusMonitor.MSG_RETURN)
-        super(ReturnMonitor, self).__init__(*args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Method Return Monitor'
-
-
-class ErrorMonitor(SenderMonitor):
-    '''
-    Error return of introspected interface
-    '''
-    def __init__(self, *args, **kws):
-        kws['msg_type'] = kws.get('msg_type', DbusMonitor.MSG_ERROR)
-        super(ErrorMonitor, self).__init__(*args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Error Monitor'
-
-
-@NodeToMonitor(DBusMethod, DBusProperty)
-class MethodMonitor(DbusMonitors):
-    '''
-    Method group: (Method Call and Method Result 
-    member: str, member to be watched (name of method)
-    '''
-    def __init__(self, *args, **kws):
-        super(MethodMonitor, self).__init__([
-            CallMonitor(*args, **kws),
-            ReturnMonitor(*args, **kws)
-        ], *args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Method Monitor'
-
-
-@NodeToMonitor(DBusInterface)
-class InterfaceMonitor(DbusMonitors):
-    '''
-    Interface group
-    '''
-    def __init__(self, *args, **kws):
-        super(InterfaceMonitor, self).__init__([
-            MethodMonitor(*args, **kws),
-            ErrorMonitor(*args, **kws),
-            SignalMonitor(*args, **kws)
-        ], *args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Interface Monitor'
-
-
-class PathMonitor(DbusMonitors):
-    '''
-    Object Path group
-    '''
-    def __init__(self, *args, **kws):
-        super(PathMonitor, self).__init__([
-            MethodMonitor(*args, **kws),
-            ErrorMonitor(*args, **kws),
-            SignalMonitor(*args, **kws)
-        ], *args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Path Monitor'
-
-
-@NodeToMonitor(DBusNode)
-class DbusName(DbusMonitors):
-    '''
-    Object DbusName group
-    '''
-    def __init__(self, *args, **kws):
-        super(DbusName, self).__init__([
-            MethodMonitor(*args, **kws),
-            ErrorMonitor(*args, **kws),
-            SignalMonitor(*args, **kws)
-        ], *args, **kws)
-
-    @staticmethod
-    def Label():
-        return 'Busname Monitor'

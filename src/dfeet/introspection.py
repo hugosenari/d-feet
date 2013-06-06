@@ -82,57 +82,22 @@ class AddressInfo():
             else:
                 self.connection = None
                 raise Exception("Invalid p2p address '%s'" % (self.address))
-
+        
         #dbis_,pmotpr
         self.monitor_store = ui.get_widget('monitorstore')
-        self.monitor_box = None # current monitorbox
-        self.context_menu = None # current context menu
-        self.__treeview.connect('button-press-event', self.__treeview_row_clicked_cb)
-         
+        self.monitor_box = None
+        
         #start processing data
         self.introspect_start()
-
-    def __treeview_row_clicked_cb(self, treeview, event):
-        if event.button == 3: #3 = right click 
-            pthinfo = treeview.get_path_at_pos(int(event.x), int(event.y)) 
-            if pthinfo:
-                self.__row_menu_activated_cb(treeview, pthinfo[0], event)
-                
-    def __row_menu_activated_cb(self, treeview, path, event):
-        model = treeview.get_model()
-        iter_ = model.get_iter(path)
-        node = model.get_value(iter_, 1)
-        if node is None and model.iter_parent(iter_) is not None:
-            iter_ = model.iter_parent(iter_)
-            node = model.get_value(iter_, 1)
-        items = self.__get_menuitems_for_monitor(node)
-        if len(items):
-            if self.context_menu:
-                self.context_menu.destroy()
-            self.context_menu = Gtk.Menu()
-            for item in items:
-                self.context_menu.append(item)
-            self.context_menu.popup(None, None, None, None, event.button, event.time)
-            
-    def __get_menuitems_for_monitor(self, node=None):
-        if node is not None:
-            def soft_monitor_cb(*ags, **kws):
-                self.__show_monitor_for_node(node)
-            label = DbusMonitor.node_to_monitor_label(node)
-            soft_monitor_item = Gtk.MenuItem(label)
-            soft_monitor_item.connect('activate', soft_monitor_cb)
-            soft_monitor_item.show()
-            return [soft_monitor_item]
-    
-    def __show_monitor_for_node(self, node):
+        
+    def __show_monitor(self):
         if self.monitor_box:
-            self.destroy_monitor()
-        monitorclass = DbusMonitor.node_to_monitor(node)
-        dbusmonitor = monitorclass(self.name, self.connection)
+            self.monitor_box.destroy()
+        dbusmonitor = DbusMonitor(self.name, self.connection)
         self.monitor_box = MonitorBox(self.name, dbusmonitor, self.data_dir)
         self.monitor_box.start()
         self.monitor_store.add(self.monitor_box)
-
+   
     def __messagedialog_close_cb(self, dialog):
         self.__messagedialog.destroy()
         
@@ -198,13 +163,15 @@ class AddressInfo():
             return -1
         else:
             return un1 > un2
-
+        
     def introspect_start(self):
         """introspect the given bus name and update the tree model"""
         #cleanup current tree model
         self.__treemodel.clear()
         #start introspection
         self.__dbus_node_introspect("/")
+        #start ,pmotpr
+        self.__show_monitor()
 
     def __button_reload_clicked_cb(self, widget):
         """reload the introspection data"""
