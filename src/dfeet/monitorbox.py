@@ -1,6 +1,7 @@
 from uiloader import UILoader
 from dfeet.dbus_monitor import DbusMonitor
 from gi.repository import Gtk, Gio, GLib
+from dfeet.threads_utils import thread_locking
 
 class MonitorBox(Gtk.VBox):
     """Class to handle dbus monitor interface"""
@@ -15,50 +16,36 @@ class MonitorBox(Gtk.VBox):
         self.__del__()
         
     def __init__(self, busname, dbusmonitor, data_dir, *args, **kw):
-        signal_dict = {
-                        'destroy_monitor_box_cb' : self.stop,
-                      }
-        self.data_dir = data_dir
-        
-        Gtk.VBox.__init__(self)
-        self.connect('destroy', self.stop)
-        self.ui = UILoader(data_dir, UILoader.UI_MONITORBOX)
-
-        self.root_widget = self.ui.get_root_widget()
-
         self.busname = busname
         self.dbusmonitor = dbusmonitor
-
-        self.ui.connect_signals(signal_dict)
-
-        self.textviews = {
-             DbusMonitor.MSG_ERROR: 'monitortextview',
-             DbusMonitor.MSG_METHOD: 'monitortextview',
-             DbusMonitor.MSG_RETURN: 'monitortextview',
-             DbusMonitor.MSG_SIGNAL: 'monitortextview',
-        }
-
         self.callback = None
+        self.data_dir = data_dir
+        self.ui = UILoader(data_dir, UILoader.UI_MONITORBOX)
+        self.root_widget = self.ui.get_root_widget()
+        
+        self.__init_gtk()
 
+    def __init_gtk(self):
+        Gtk.VBox.__init__(self)      
+        self.connect('destroy', self.stop)
+        self.add(self.ui.get_root_widget())       
         self.root_widget.show_all()
-        self.add(self.ui.get_root_widget())
         self.show_all()
 
-
     #callback
-    def monitore(self, bus, message, dbusmonitor, *args, **kws):
-        mtype = message.get_message_type()
-        if mtype in self.textviews.keys():
-            textview = self.ui.get_widget(self.textviews.get(mtype)) 
-            text_buffer = textview.get_buffer()
-            text_buffer.insert_at_cursor(DbusMonitor.message_printer(message))
+    @thread_locking
+    def register_message(self, bus, message, dbusmonitor, *args, **kws):
+        textview = self.ui.get_widget('monitortextview')
+        formated_msg = DbusMonitor.message_printer(message)
+        text_buffer = textview.get_buffer()
+        text_buffer.insert_at_cursor(formated_msg)
 
     def start(self, *args, **kws):
         def  _filter_cb(bus, message, dbusmonitor, * args, **kws):
-            return self.monitore(bus, message, dbusmonitor, *args, **kws)
+            return self.register_message(bus, message, dbusmonitor, *args, **kws)
         self.callback = _filter_cb
         self.dbusmonitor.start(_filter_cb)
-
+    
     def stop(self, *args, **kws):
         if self.callback:
             self.dbusmonitor.stop()

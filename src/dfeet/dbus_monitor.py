@@ -1,10 +1,5 @@
-from dfeet.introspection_helper import DBusNode
-from dfeet.introspection_helper import DBusInterface
-from dfeet.introspection_helper import DBusProperty
-from dfeet.introspection_helper import DBusSignal
-from dfeet.introspection_helper import DBusMethod
-
 from gi.repository import Gio, GLib
+from dfeet.threads_utils import as_new_thread
 
 class DbusMonitor(object):
     MSG_ERROR = Gio.DBusMessageType.ERROR
@@ -59,6 +54,12 @@ class DbusMonitor(object):
         see:
         http://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-routing-match-rules 
         '''
+        if path: kws['path'] = path
+        if sender: kws['sender'] = sender
+        if member: kws['member'] = member
+        if interface: kws['interface'] = interface
+        if destination: kws['destination'] = destination
+        
         self.con = connection
 
         self.callback = None
@@ -68,14 +69,12 @@ class DbusMonitor(object):
         self.rule = ''
         self.state = 0
         self.filter_guid = None
-
-        if sender: kws['sender'] = sender
-        if path: kws['path'] = path
-        if interface: kws['interface'] = interface
-        if member: kws['member'] = member
-        if destination: kws['destination'] = destination
         self.filters = kws
+        self.proxy = None
+        self.create_proxy()
         
+    @as_new_thread
+    def create_proxy(self):
         self.proxy = Gio.DBusProxy.new_sync(
             self.con, #cpmmectopm
             Gio.DBusProxyFlags.NONE,
@@ -84,29 +83,30 @@ class DbusMonitor(object):
             "/", #path
             "org.freedesktop.DBus", #iface
             None
-        ) 
-
-    def start(self, callback=None, *args, **kws):
-        self.callback = callback
-        #first we convert parms to rule
+        )
+    
+    def params_to_dbus_rule(self):
         self.rule = ''
         if self.type and \
             self.type in self.__class__.MESSAGE_TYPES.keys():
             self.rule = self.rule + "type=%s," % (
                 self.__class__.MESSAGE_TYPES.get(self.type))
         for filter_name in self.filters.keys():
-            if self.filters[filter_name]:
-                self.rule = self.rule + "%s=%s," % (
-                    filter_name, self.filters[filter_name])
+            self.rule = self.rule + "%s=%s," % (
+                filter_name, self.filters[filter_name])
         #remove last ,
         self.rule = self.rule.strip(',')
-        #define rules and callback 
-        def _filter_cb(bus, message, *args, **kws):
-            slf = args[1]
-            if slf.match(message): 
-                slf.message_filter(bus, message, *args, **kws)
+        return self.rule
+
+    def start(self, callback=None, *args, **kws):
+        self.callback = callback
+        rule = self.params_to_dbus_rule()
+        
+        #define rules callback 
+        def _filter_cb(bus, message, b, self, *args, **kws):
+            self.message_filter(bus, message, *args, **kws)
             return message
-        self.add_match(self.rule)
+        self.add_match(rule)
         self.filter_guid = self.con.add_filter(_filter_cb, self)
         
     def match(self, msg):
@@ -120,21 +120,23 @@ class DbusMonitor(object):
         return True
 
     def add_match(self, rule):
-        def error_handler(proxy_object, err, user_data):
-            pass
-        self.proxy.AddMatch('(s)', rule, #signature, value
-            error_handler=error_handler)
+        def error_handler(proxy_object, err, user_data): pass
+        if self.proxy:
+            self.proxy.AddMatch('(s)', rule, #signature, value
+                error_handler=error_handler)
         
     def remove_match(self, rule):
-        self.proxy.RemoveMatch('(s)', rule)
+        if self.proxy:
+            self.proxy.RemoveMatch('(s)', rule)
+        if self.con:
+            self.con.remove_filter(self.filter_guid)
 
     def stop(self, *args, **kws):
         self.remove_match(self.rule)
-        self.con.remove_filter(self.filter_guid)
 
     def message_filter(self, bus, message, *args, **kws):
-        if self.callback:
-            self.callback(bus, message, self)
+        if self.match(message) and self.callback:
+                self.callback(bus, message, self)
         return message
 
     @staticmethod

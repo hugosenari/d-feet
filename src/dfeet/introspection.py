@@ -170,8 +170,6 @@ class AddressInfo():
         self.__treemodel.clear()
         #start introspection
         self.__dbus_node_introspect("/")
-        #start ,pmotpr
-        self.__show_monitor()
 
     def __button_reload_clicked_cb(self, widget):
         """reload the introspection data"""
@@ -262,6 +260,8 @@ class AddressInfo():
                     pass
 
                 self.introspect_box.show_all()
+                #start monitor
+                self.__show_monitor()
 
     def __dbus_node_introspect(self, object_path):
         """Introspect the given object path. This function will be called recursive"""
