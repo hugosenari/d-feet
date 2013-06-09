@@ -1,12 +1,10 @@
-Welcome to D-Feet (http://live.gnome.org/d-feet)
-
+Welcome to D-Feet (https://live.gnome.org/DFeet/)
+ 
 Requirements:
 
-D-Bus > 1.0
-D-Bus Python > 0.82.3
-PyGtk
-Python 2.5
-python-libxslt http://xmlsoft.org/xslt/python.html
+python >= 2.7
+python-gi >= 3.3.91
+gtk >= 3.6
 
 Optional Requriements:
 
@@ -14,12 +12,8 @@ gnome-python-libwnck - for displaying application icons next to the application
 
 To run localy for testing:
 
-./d-feet --local-dirs
-
-or
-
-./d-feet -l
+DFEET_DEBUG=1 ./src/d-feet
 
 To install:
 
-setup.py install
+./configure && make && make install

@@ -1,3 +1,60 @@
+0.3.4 - May 22, 2013
+====================
+- Update README and HACKING (Thomas Bechtold)
+- Improve the HighContrast icon (Thomas Bechtold)
+- Add missing source (Thomas Bechtold)
+- Add scalable HighContrast icon (Thomas Bechtold)
+- Remove useless text and duplicate icons from scalable logo (Thomas Bechtold)
+- Don't fail if no systembus or sessionbus is available (Thomas Bechtold)
+- Add app menu (Thomas Bechtold)
+- Move window logic to own file and use GtkApplicationWindow (Thomas Bechtold)
+- Update .gitignore (Thomas Bechtold)
+- Add help files (Thomas Bechtold)
+- Check source for pep8 (Thomas Bechtold)
+- Fix unittests (Thomas Bechtold)
+- Use correct data dir (Thomas Bechtold)
+- Use autotools for d-feet (Thomas Bechtold)
+- Fix whitespaces (Thomas Bechtold)
+
+0.3.3 - Jan 12, 2013
+====================
+
+- Don't close dialog after method execution (Thomas Bechtold)
+- Add close-button to exception dialog (Thomas Bechtold)
+- Fix needed double click to close method execution dialog (Thomas Bechtold)
+- Update HACKING (Thomas Bechtold)
+
+0.3.2 - Jan 10, 2013
+====================
+
+- Fix input parameter handling for method execution dialog (Thomas Bechtold)
+- Update requirements in README (Thomas Bechtold)
+- Make d-feet ready for Python 3 (Thomas Bechtold)
+
+0.3.1 - Oct 23, 2012
+====================
+
+This is a new unstable release of DFeet.
+It's the first release based on gobject-introspection and gdbus.
+
+- Update setup.py (Thomas Bechtold)
+- Enlarge icon (Thomas Bechtold)
+- Fix icon handling (Thomas Bechtold)
+- Adjust UI (Thomas Bechtold)
+- Fix d-feet icon usage (Thomas Bechtold)
+- Merge branch 'pygi' (Thomas Bechtold)
+
+0.1.15 - Oct 15, 2012
+==
+- Add Thomas Bechtold as a project maintainer (Thomas Bechtold)
+- fixed tree model crash (Robert Ancell)
+- fix crash on empty selection (Robert Ancell)
+- removed gap between window titlebar and menubar (Chris Couzens)
+- import gtk early in a try except block so we catch if display is not set (John (J5) Palmieri)
+- Use XDG config dir (William Jon McCann)
+- update .gitignore (John (J5) Palmieri)
+- fix icon globbing in setup.py (John (J5) Palmieri)
+
 0.1.14 - Nov 14, 2011
 ==
 - replace old icon with new hi-res icons (John (J5) Palmieri)
