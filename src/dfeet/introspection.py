@@ -91,12 +91,11 @@ class AddressInfo():
         self.introspect_start()
         
     def __show_monitor(self):
-        if self.monitor_box:
-            self.monitor_box.destroy()
-        dbusmonitor = DbusMonitor(self.name, self.connection)
-        self.monitor_box = MonitorBox(self.name, dbusmonitor, self.data_dir)
-        self.monitor_box.start()
-        self.monitor_store.add(self.monitor_box)
+        if not self.monitor_box:
+            dbusmonitor = DbusMonitor(self.name, self.connection)
+            self.monitor_box = MonitorBox(self.name, dbusmonitor, self.data_dir)
+            self.monitor_box.start()
+            self.monitor_store.add(self.monitor_box)
    
     def __messagedialog_close_cb(self, dialog):
         self.__messagedialog.destroy()
@@ -166,7 +165,7 @@ class AddressInfo():
         
     def introspect_start(self):
         """introspect the given bus name and update the tree model"""
-        #cleanup current tree model
+        #cleanup cself.rule = ''urrent tree model
         self.__treemodel.clear()
         #start introspection
         self.__dbus_node_introspect("/")
@@ -185,6 +184,7 @@ class AddressInfo():
             self.__messagedialog.set_property("text", "%s : %s" % (self.name, str(e)))
             self.__messagedialog.run()
             self.__messagedialog.destroy()
+            print('oi')
         else:
             #we got a valid result from dbus call! Create nodes and add to treemodel
             node_info = Gio.DBusNodeInfo.new_for_xml(res[0])
@@ -260,8 +260,8 @@ class AddressInfo():
                     pass
 
                 self.introspect_box.show_all()
-                #start monitor
-                self.__show_monitor()
+            #start monitor
+            self.__show_monitor()
 
     def __dbus_node_introspect(self, object_path):
         """Introspect the given object path. This function will be called recursive"""

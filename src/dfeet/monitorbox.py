@@ -1,7 +1,6 @@
 from uiloader import UILoader
 from dfeet.dbus_monitor import DbusMonitor
 from gi.repository import Gtk, Gio, GLib
-from dfeet.threads_utils import thread_locking
 
 class MonitorBox(Gtk.VBox):
     """Class to handle dbus monitor interface"""
@@ -33,7 +32,6 @@ class MonitorBox(Gtk.VBox):
         self.show_all()
 
     #callback
-    @thread_locking
     def register_message(self, bus, message, dbusmonitor, *args, **kws):
         textview = self.ui.get_widget('monitortextview')
         formated_msg = DbusMonitor.message_printer(message)

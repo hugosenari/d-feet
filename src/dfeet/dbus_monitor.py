@@ -1,5 +1,5 @@
 from gi.repository import Gio, GLib
-from dfeet.threads_utils import as_new_thread
+
 
 class DbusMonitor(object):
     MSG_ERROR = Gio.DBusMessageType.ERROR
@@ -60,20 +60,17 @@ class DbusMonitor(object):
         if interface: kws['interface'] = interface
         if destination: kws['destination'] = destination
         
+        self.busname = busname
         self.con = connection
-
         self.callback = None
         self._filter_cb = None
-
-        self.type = msg_type
         self.rule = ''
+        self.type = msg_type
         self.state = 0
         self.filter_guid = None
         self.filters = kws
         self.proxy = None
-        self.create_proxy()
-        
-    @as_new_thread
+    
     def create_proxy(self):
         self.proxy = Gio.DBusProxy.new_sync(
             self.con, #cpmmectopm
@@ -97,45 +94,57 @@ class DbusMonitor(object):
         #remove last ,
         self.rule = self.rule.strip(',')
         return self.rule
-
+    
     def start(self, callback=None, *args, **kws):
-        self.callback = callback
+        self.create_proxy()
+        self.callback = callback 
+        self.add_match()
+        self.add_filter()
+    
+    def add_match(self):
+        def error_handler(*args, **kwds):
+            pass
         rule = self.params_to_dbus_rule()
-        
-        #define rules callback 
-        def _filter_cb(bus, message, b, self, *args, **kws):
+
+        try:
+            if self.proxy:
+                self.proxy.AddMatch('(s)', rule, #signature, value
+                    error_handler=error_handler)
+        except:
+            print("Could not set matching rule")
+    
+    def add_filter(self):
+        def filter_cb(bus, message, b, self, *args, **kws):
             self.message_filter(bus, message, *args, **kws)
             return message
-        self.add_match(rule)
-        self.filter_guid = self.con.add_filter(_filter_cb, self)
-        
-    def match(self, msg):
-        r = self.filters
-        if msg.get_sender() == 'org.freedesktop.DBus' and\
-            r.get('sender') != msg.get_sender():
-            return False
-        if msg.get_destination() == 'org.freedesktop.DBus' and\
-            r.get('destination') != msg.get_destination():
-            return False
-        return True
-
-    def add_match(self, rule):
-        def error_handler(proxy_object, err, user_data): pass
-        if self.proxy:
-            self.proxy.AddMatch('(s)', rule, #signature, value
-                error_handler=error_handler)
-        
-    def remove_match(self, rule):
-        if self.proxy:
-            self.proxy.RemoveMatch('(s)', rule)
-        if self.con:
-            self.con.remove_filter(self.filter_guid)
-
+        try:
+            self.filter_guid = self.con.add_filter(filter_cb, self)
+        except:
+            print("Could not set matching callback")
+    
     def stop(self, *args, **kws):
-        self.remove_match(self.rule)
+        self.remove_filter()
+        self.remove_match()
+    
+    def remove_match(self):
+        try:
+            if self.proxy:
+                self.proxy.RemoveMatch('(s)', self.rule)
+        except:
+            print("Could not unset matching rule")
+    
+    def remove_filter(self):
+        try:
+            if self.con:
+                self.con.remove_filter(self.filter_guid)
+        except:
+            print("Could not unset matching callback")
 
     def message_filter(self, bus, message, *args, **kws):
-        if self.match(message) and self.callback:
+        r = self.filters
+        if self.callback:
+            if self.busname == message.get_sender() or\
+               self.busname == message.get_destination():
                 self.callback(bus, message, self)
         return message
 
@@ -155,23 +164,6 @@ class DbusMonitor(object):
                 (("error: %s \n" % message.get_error_name()) if message.get_error_name() else "")
         return ''
 
-    @property
-    def is_group(self):
-        return False
-    
     @staticmethod
     def Label():
         return 'BusName Monitor'
-
-    @staticmethod
-    def node_to_monitor(node):
-        def constructor(busname, conn):
-            monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__, DbusMonitor)
-            rules = {} 
-            return monitorclass(busname, conn, **rules)
-        return constructor
-
-    @staticmethod
-    def node_to_monitor_label(node):
-        monitorclass = DbusMonitor.NODE_TO_MONITOR.get(node.__class__, DbusMonitor)
-        return monitorclass.Label()
